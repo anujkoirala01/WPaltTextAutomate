@@ -10,9 +10,14 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Access the variables
-WP_URL = os.getenv("WP_URL")
-USERNAME = os.getenv("USERNAME")
-PASSWORD = os.getenv("PASSWORD")
+url = os.getenv("WP_URL")
+username = os.getenv("USER_LOGIN")
+user_Pass = os.getenv("PASSWORD")
+
+# Set up your WordPress login credentials here
+WP_URL = url
+USERNAME = username
+PASSWORD = user_Pass
 
 # Initialize WebDriver (assuming ChromeDriver is installed)
 driver = webdriver.Chrome()  # Replace with WebDriverManager if needed
