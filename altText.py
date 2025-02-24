@@ -1,6 +1,8 @@
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.support.ui import WebDriverWait 
+from selenium.webdriver.support import expected_conditions as EC
 import time
 import re
 import os
@@ -23,7 +25,7 @@ PASSWORD = user_Pass
 driver = webdriver.Chrome()  # Replace with WebDriverManager if needed
 
 # Hardcoded initial image ID
-initial_image_id = "10649"  # Example image ID, replace with the actual one
+initial_image_id = "10638"  # Example image ID, replace with the actual one
 
 # Login to WordPress Admin
 def login_to_wp():
@@ -75,8 +77,8 @@ def fill_alt_and_caption(image_id):
                 post_title = post_title.replace("Uploaded to: ", "")
 
                 # Use a regex to match everything before the first dash (–)
-                post_title = re.sub(r" -.*", "", post_title)
-
+                # post_title = re.sub(r" -.*", "", post_title)
+                post_title = re.sub(r" [\-\–—].*", "", post_title)
                 # Log the current alt text and caption values
                 print("Alt Text Value:", post_title)
                 print("Caption Value:", post_title)
