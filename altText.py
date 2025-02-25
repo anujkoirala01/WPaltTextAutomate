@@ -25,7 +25,7 @@ PASSWORD = user_Pass
 driver = webdriver.Chrome()  # Replace with WebDriverManager if needed
 
 # Hardcoded initial image ID
-initial_image_id = "10642"  # Example image ID, replace with the actual one
+initial_image_id = "9830"  # Example image ID, replace with the actual one
 
 # Login to WordPress Admin
 def login_to_wp():
@@ -65,37 +65,56 @@ def fill_alt_and_caption(image_id):
     # Wait until the modal is fully loaded and the elements are available
     while True:
         try:
-            alt_text_input = driver.find_element(By.ID, 'attachment-details-two-column-alt-text')
+            # Try to find the "Uploaded to:" element first
+            try:
+                uploaded_to_element = driver.find_element(By.CSS_SELECTOR, '.uploaded-to')
+                post_title = uploaded_to_element.text.strip() if uploaded_to_element else None
+            except Exception as e:
+                post_title = None  # Set post_title to None if 'Uploaded to:' is not found
+
+            # If no valid "Uploaded to:" field found, skip this image and go to the next one
+            if not post_title or post_title == "Uploaded to:":
+                print("No valid 'Uploaded to:' field found. Skipping to next image.")
+                click_next_button()  # Click "Next" to proceed to the next image
+                return  # Exit the loop and skip the current image
+
+            # Clean and process the post title (same as before)
+            post_title = post_title.replace("Uploaded to: ", "")
+            post_title = re.sub(r" [\-\–—].*", "", post_title)
+            print("Alt Text Value:", post_title)
+            print("Caption Value:", post_title)
+            print("Post Title (Before Dash):", post_title)
+
+            # Find the Caption input field (this is always available)
             caption_input = driver.find_element(By.ID, 'attachment-details-two-column-caption')
-            uploaded_to_element = driver.find_element(By.CSS_SELECTOR, '.uploaded-to')
 
-            if alt_text_input and caption_input and uploaded_to_element:
-                # Get the post title (Uploaded To) from the element with class "uploaded-to"
-                post_title = uploaded_to_element.text.strip()
+            # Check if the Alt Text field exists (it will not exist for video files)
+            try:
+                alt_text_input = driver.find_element(By.ID, 'attachment-details-two-column-alt-text')
+                alt_text_exists = True
+            except Exception as e:
+                alt_text_exists = False  # Alt Text field does not exist for videos
 
-                # Remove the "Uploaded to: " prefix
-                post_title = post_title.replace("Uploaded to: ", "")
+            # Check for the file type (image/jpeg or mp4)
+            file_type_element = driver.find_element(By.CSS_SELECTOR, '.file-type')
+            file_type = file_type_element.text.strip()  # Get the text of the file type (e.g., "image/jpeg" or "video/mp4")
+            print(f"File type: {file_type}")
 
-                # Use a regex to match everything before the first dash (–)
-                # post_title = re.sub(r" -.*", "", post_title)
-                post_title = re.sub(r" [\-\–—].*", "", post_title)
-                # Log the current alt text and caption values
-                print("Alt Text Value:", post_title)
-                print("Caption Value:", post_title)
-                print("Post Title (Before Dash):", post_title)
-
-                # Set the Alt Text and Caption fields with the post title
+            # If the file type is image/jpeg, fill both Alt Text and Caption
+            if "image" in file_type and alt_text_exists:
                 alt_text_input.send_keys(Keys.CONTROL + "a")  # Clear the existing text
                 alt_text_input.send_keys(post_title)
 
-                caption_input.send_keys(Keys.CONTROL + "a")  # Clear the existing text
-                caption_input.send_keys(post_title)
+            # Always fill the Caption field
+            caption_input.send_keys(Keys.CONTROL + "a")  # Clear the existing text
+            caption_input.send_keys(post_title)
 
-                # Trigger the change event (if required)
-                alt_text_input.send_keys(Keys.TAB)
-                caption_input.send_keys(Keys.TAB)
+            # Trigger the change event (if required)
+            if alt_text_exists:
+                alt_text_input.send_keys(Keys.TAB)  # Only trigger the alt text if it exists
+            caption_input.send_keys(Keys.TAB)
 
-                break  # Exit the loop once values are set
+            break  # Exit the loop once values are set
         except Exception as e:
             print("Waiting for the input fields...")
             time.sleep(0.5)  # Check every 500ms to see if the input fields are ready
