@@ -25,7 +25,7 @@ PASSWORD = user_Pass
 driver = webdriver.Chrome()  # Replace with WebDriverManager if needed
 
 # Hardcoded initial image ID
-initial_image_id = "10638"  # Example image ID, replace with the actual one
+initial_image_id = "10642"  # Example image ID, replace with the actual one
 
 # Login to WordPress Admin
 def login_to_wp():
@@ -106,17 +106,69 @@ def navigate_to_media_item(image_id):
     driver.get(f'{WP_URL}/upload.php?item={image_id}')
     time.sleep(3)  # Wait for the page to load
 
-# Function to click the "Next" button and go to the next image
 def click_next_button():
     try:
-        # Find the "Next" button using the class 'right' and click it
-        next_button = driver.find_element(By.CLASS_NAME, "right")
+        # Try to find the "Next" button using the class 'right' and click it
+        next_button = WebDriverWait(driver, 10).until(
+            EC.element_to_be_clickable((By.CLASS_NAME, "right"))
+        )
         next_button.click()
         time.sleep(3)  # Wait for the next image to load
+        return True  # Return True if "Next" is successfully clicked
     except Exception as e:
-        print("Next button not found, or end of images reached.")
-        return False  # Return False if no "Next" button is found
-    return True
+        print("Next button not clickable or not found, attempting to load more images...")
+
+        try:
+            # Close the current image modal by clicking on the close button
+            close_button = WebDriverWait(driver, 10).until(
+                EC.element_to_be_clickable((By.CLASS_NAME, "media-modal-close"))
+            )
+            close_button.click()
+            print("Image modal closed. Proceeding to load more images...")
+            time.sleep(3)  # Wait for the page to load
+
+            # Count the number of images before clicking "Load More"
+            initial_images = driver.find_elements(By.CSS_SELECTOR, ".attachment")
+            initial_image_count = len(initial_images)
+            print(f"Initial image count: {initial_image_count}")
+
+            # Wait for the "Load More" button to be clickable
+            load_more_button = WebDriverWait(driver, 10).until(
+                EC.element_to_be_clickable((By.CLASS_NAME, "button.load-more.button-primary"))
+            )
+            load_more_button.click()
+            print("Load More button clicked. Waiting for new images to load...")
+            time.sleep(5)  # Wait a bit longer to allow new images to load on the page
+
+            # Wait for new images to appear, indicating "Load More" worked
+            WebDriverWait(driver, 10).until(
+                EC.presence_of_element_located((By.CSS_SELECTOR, ".attachment"))
+            )
+
+            # Count the total number of images after clicking "Load More"
+            new_images = driver.find_elements(By.CSS_SELECTOR, ".attachment")
+            new_image_count = len(new_images)
+            print(f"New image count after Load More: {new_image_count}")
+
+            new_image_id = new_images[initial_image_count].get_attribute("data-id")
+            print(f"New image ID found: {new_image_id}")
+
+            # Find and click on the newly loaded image with the new image ID
+            new_image = driver.find_element(By.CSS_SELECTOR, f'.attachment[data-id="{new_image_id}"]')
+            new_image.click()
+            time.sleep(5)
+
+            # Now that the new image is clicked, fill the alt text and caption
+            fill_alt_and_caption(new_image_id)
+
+            # After filling the details, click the "Next" button again
+            return click_next_button()  # Attempt to click the next button again after filling the details
+        except Exception as e:
+            print("Load More button not found or not clickable. Exiting.")
+            return False  # If no "Load More" or "Next" button was found, return False
+
+    return False  # Return False if the Next button was clicked or failed
+
 
 # Start the login process
 login_to_wp()
@@ -126,8 +178,9 @@ current_image_id = initial_image_id
 
 # Loop to process images
 while True:
-    # Navigate to the image edit page with the current image ID
-    navigate_to_media_item(current_image_id)
+    if current_image_id == initial_image_id:
+        # For the first image, navigate to the media item page
+        navigate_to_media_item(current_image_id)    
 
     # Fill Alt and Caption for the current image
     fill_alt_and_caption(current_image_id)
