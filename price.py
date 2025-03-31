@@ -148,19 +148,26 @@ login_to_wp()
 
 # Start a loop that asks for the post ID after completing the actions for a post
 while True:
-    # Get the post ID from the user input
-    post_id = input("Please enter the WordPress Post ID (or type 'exit' to quit): ")
+    # # Get the post ID from the user input
+    # post_id = input("Please enter the WordPress Post ID (or type 'exit' to quit): ")
     
-    if post_id.lower() == 'exit':
-        print("Exiting the script.")
-        break  # Exit the loop if the user types 'exit'
-    
-    # Pass the post ID dynamically when performing actions
-    perform_actions(post_id)
+    # if post_id.lower() == 'exit':
+    #     print("Exiting the script.")
+    #     break  # Exit the loop if the user types 'exit'
+    # List of post IDs
+    post_ids = [
+        9719, 7828, 9632, 7482, 7493, 7541, 9625, 7545, 9628, 9635,
+        9665, 10160, 10303, 8098, 8092, 8095, 7767, 7733, 7781, 7770,
+        7793, 7770, 7761, 7764, 7722, 7787, 7798, 7851, 7751, 7790,
+        7801, 7807, 7784, 7748, 7823, 7754, 7836
+    ]
 
-    # Hold the browser open for 10 seconds so you can verify if it worked
-    print("Waiting for 10 seconds to verify the changes...")
-    time.sleep(10)
+    # Pass the post ID dynamically when performing actions
+    for post_id in post_ids:
+        perform_actions(post_id)
+        # Hold the browser open for 10 seconds so you can verify if it worked
+        print("Waiting for 10 seconds to verify the changes...")
+        time.sleep(10)
 
 # Close the browser after the loop finishes (if user exits)
 driver.quit()
